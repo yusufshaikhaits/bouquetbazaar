@@ -1,0 +1,184 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Checkout | Bouquet Bazaar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preference-card {
+        border: 2px solid #eee;
+        border-radius: 1rem;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .preference-card:hover { border-color: var(--primary-color); background-color: #fffaf5; }
+    .preference-radio:checked + .preference-card {
+        border-color: var(--primary-color);
+        background-color: #fffaf5;
+        box-shadow: 0 4px 12px rgba(212, 163, 115, 0.15);
+    }
+    .preference-radio { display: none; }
+    
+    .checkout-summary-mobile { border-top: 1px solid #eee; padding-top: 1.5rem; margin-top: 1.5rem; }
+    
+    @media (max-width: 991px) {
+        .sticky-top { position: static !important; }
+        .order-summary-card { order: -1; margin-bottom: 2rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 py-md-5">
+    <div class="container py-lg-4">
+        <h1 class="display-6 mb-4 fw-bold text-center text-md-start">Checkout Details</h1>
+        
+        <div class="row g-4 g-lg-5">
+            <!-- Order Summary (Shown first on mobile) -->
+            <div class="col-lg-5 order-lg-2">
+                <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top order-summary-card" style="top: 100px;">
+                    <h4 class="mb-4 d-flex justify-content-between align-items-center">
+                        Order Summary
+                        <span class="badge bg-light text-dark rounded-pill fs-6 fw-normal" id="summary-count">0 items</span>
+                    </h4>
+                    <div id="checkout-items" class="mb-4">
+                        <!-- Items will be injected -->
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="h5">Total</span>
+                        <span class="h5 fw-bold text-primary" id="checkout-total">₹0</span>
+                    </div>
+                    <div class="p-3 bg-light rounded-3 d-flex gap-2">
+                        <i class="bi bi-info-circle text-primary"></i>
+                        <small class="text-muted">Payment and final confirmation happen on WhatsApp after you submit this form.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checkout Form -->
+            <div class="col-lg-7 order-lg-1">
+                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                    <h4 class="mb-4">Delivery Information</h4>
+                    <form id="checkout-form" method="POST" action="{% url 'checkout' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="cart_data" id="cart_data_input">
+                        
+                        <div class="row g-4">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">Full Name *</label>
+                                <input type="text" name="full_name" class="form-control form-control-lg" placeholder="Enter your name" required>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">Phone Number *</label>
+                                <input type="tel" name="phone" class="form-control form-control-lg" placeholder="Mobile number" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase">Email (Optional)</label>
+                                <input type="email" name="email" class="form-control form-control-lg" placeholder="email@example.com">
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase mb-3">How would you like your order? *</label>
+                                
+                                <input class="preference-radio" type="radio" name="delivery_preference" id="pref-delivery" value="delivery" checked onchange="toggleAddress(true)">
+                                <label class="preference-card" for="pref-delivery">
+                                    <div class="bg-light rounded-circle p-3"><i class="bi bi-truck fs-4"></i></div>
+                                    <div>
+                                        <div class="fw-bold">Online Delivery</div>
+                                        <div class="small text-muted">We deliver to your doorstep</div>
+                                    </div>
+                                </label>
+
+                                <input class="preference-radio" type="radio" name="delivery_preference" id="pref-pickup" value="pickup" onchange="toggleAddress(false)">
+                                <label class="preference-card" for="pref-pickup">
+                                    <div class="bg-light rounded-circle p-3"><i class="bi bi-shop fs-4"></i></div>
+                                    <div>
+                                        <div class="fw-bold">Self Pickup</div>
+                                        <div class="small text-muted">Collect from our location</div>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div id="address-section" class="col-12">
+                                <label class="form-label fw-bold small text-uppercase">Delivery Address *</label>
+                                <textarea name="address" class="form-control" rows="3" placeholder="Full address with pincode"></textarea>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase">Special Instructions</label>
+                                <textarea name="instructions" class="form-control" rows="2" placeholder="Gift message or delivery notes..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg w-100 py-3 shadow">
+                                <i class="bi bi-whatsapp me-2"></i> Confirm & Message on WhatsApp
+                            </button>
+                            <div class="text-center mt-3">
+                                <a href="{% url 'cart' %}" class="text-muted small text-decoration-none">
+                                    <i class="bi bi-arrow-left me-1"></i> Back to Cart
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function loadCheckoutSummary() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        if (cart.length === 0) { window.location.href = "{% url 'cart' %}"; return; }
+
+        const container = document.getElementById('checkout-items');
+        document.getElementById('cart_data_input').value = JSON.stringify(cart);
+        document.getElementById('summary-count').innerText = `${cart.length} items`;
+        
+        let total = 0;
+        container.innerHTML = '';
+
+        cart.forEach(item => {
+            const subtotal = item.price * item.quantity;
+            total += subtotal;
+            
+            const div = document.createElement('div');
+            div.className = 'd-flex align-items-center mb-3';
+            div.innerHTML = `
+                <div class="position-relative head-img me-3">
+                    <img src="${item.image}" class="rounded-3" style="width: 60px; height: 60px; object-fit: cover;">
+                    <span class="badge bg-dark position-absolute top-0 start-100 translate-middle rounded-pill border border-2 border-white" style="font-size: 0.7rem;">${item.quantity}</span>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="small fw-bold line-clamp-1">${item.name}</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">₹${item.price} each</div>
+                </div>
+                <div class="fw-bold small ms-2">₹${subtotal}</div>
+            `;
+            container.appendChild(div);
+        });
+
+        document.getElementById('checkout-total').innerText = `₹${total}`;
+    }
+
+    function toggleAddress(show) {
+        const section = document.getElementById('address-section');
+        const input = section.querySelector('textarea');
+        section.style.display = show ? 'block' : 'none';
+        input.required = show;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCheckoutSummary();
+        toggleAddress(true);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'website/base.html' %}
+
+{% block title %}{{ title }} | Bouquet Bazaar Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4 py-md-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item small"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none">Admin</a></li>
+                    <li class="breadcrumb-item small active">{{ title }}</li>
+                </ol>
+            </nav>
+
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <h1 class="h3 mb-4">{{ title }}</h1>
+                <hr class="mb-4">
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row g-4">
+                        <div class="col-12 col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">Product Name</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors }}</div>{% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">Description</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 col-md-4">
+                            <div class="mb-3 text-center">
+                                <label class="form-label fw-bold small text-uppercase d-block">Thumbnail</label>
+                                <div class="position-relative d-inline-block">
+                                    {% if product and product.image %}
+                                    <img src="{{ product.image.url }}" class="img-fluid rounded shadow-sm mb-2" style="max-height: 150px; width: 150px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center mb-2 mx-auto" style="height: 150px; width: 150px;">
+                                        <i class="bi bi-image text-muted fs-1"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="small">{{ form.image }}</div>
+                                {% if form.image.errors %}<div class="text-danger small">{{ form.image.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">Category</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}<div class="text-danger small">{{ form.category.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">Price (₹)</label>
+                                {{ form.price }}
+                                {% if form.price.errors %}<div class="text-danger small">{{ form.price.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 d-flex flex-column flex-md-row gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg px-5 order-first order-md-last">Save Product</button>
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary btn-lg px-5">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

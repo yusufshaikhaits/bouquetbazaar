@@ -1,0 +1,221 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Your Cart | Bouquet Bazaar{% endblock %}
+
+{% block content %}
+<section class="py-4 py-md-5">
+    <div class="container py-lg-4">
+        <h1 class="display-6 mb-4 fw-bold text-center text-md-start">Your Shopping Cart</h1>
+        
+        <div id="cart-content-wrapper">
+            <!-- Content will be injected by JavaScript -->
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Cart Empty Template -->
+<template id="empty-cart-template">
+    <div class="text-center py-5">
+        <i class="bi bi-cart-x display-1 text-muted opacity-25"></i>
+        <h3 class="mt-4">Your cart is empty</h3>
+        <p class="text-muted mb-4 px-4">Looks like you haven't added anything to your cart yet.</p>
+        <a href="{% url 'products' %}" class="btn btn-primary px-5 btn-lg">Browse Products</a>
+    </div>
+</template>
+
+<!-- Main Cart Layout Template -->
+<template id="cart-main-template">
+    <div class="row g-4 g-lg-5">
+        <div class="col-lg-8">
+            <!-- Desktop Layout (Table) -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 d-none d-md-block">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th class="text-end">Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items-tbody">
+                            <!-- Items injected here for desktop -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mobile Layout (Stacked Cards) -->
+            <div id="cart-items-mobile" class="d-md-none">
+                <!-- Items injected here for mobile -->
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top mb-4" style="top: 100px; z-index: 10;">
+                <h4 class="mb-4">Order Summary</h4>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Subtotal</span>
+                    <span id="summary-subtotal" class="fw-bold">₹0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="text-muted small">Delivery</span>
+                    <span class="text-success small">Calculated at checkout</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="h5">Total</span>
+                    <span class="h5 fw-bold" id="summary-total">₹0</span>
+                </div>
+                <div class="d-grid mb-1">
+                    <button onclick="proceedToCheckout()" class="btn btn-primary btn-lg py-3 shadow-sm">
+                        Proceed to Checkout <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                    <a href="{% url 'products' %}" class="btn btn-link text-muted mt-3 text-decoration-none small">
+                        <i class="bi bi-arrow-left me-1"></i> Keep Browsing
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style>
+    .cart-item-card-mobile {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .qty-btn {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50% !important;
+        font-size: 1.2rem;
+    }
+    .qty-input-mobile {
+        width: 50px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        border: none;
+        background: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function renderCart() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const wrapper = document.getElementById('cart-content-wrapper');
+        
+        if (cart.length === 0) {
+            wrapper.innerHTML = document.getElementById('empty-cart-template').innerHTML;
+            return;
+        }
+
+        // Initialize main structural template
+        wrapper.innerHTML = document.getElementById('cart-main-template').innerHTML;
+
+        const tbody = document.getElementById('cart-items-tbody');
+        const mobileList = document.getElementById('cart-items-mobile');
+        let total = 0;
+
+        cart.forEach(item => {
+            const subtotal = item.price * item.quantity;
+            total += subtotal;
+            
+            // Build Desktop Row
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="d-flex align-items-center py-2">
+                        <img src="${item.image}" alt="${item.name}" class="rounded-3 me-3" style="width: 70px; height: 70px; object-fit: cover;">
+                        <div><h6 class="mb-0 fw-bold">${item.name}</h6></div>
+                    </div>
+                </td>
+                <td>₹${item.price}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-secondary qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+                        <span class="fw-bold px-2">${item.quantity}</span>
+                        <button class="btn btn-sm btn-outline-secondary qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+                    </div>
+                </td>
+                <td class="text-end fw-bold">₹${subtotal}</td>
+                <td class="text-end">
+                    <button class="btn btn-link text-danger p-2" onclick="removeFromCart(${item.id})"><i class="bi bi-trash fs-5"></i></button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            // Build Mobile Card
+            const mobileCard = document.createElement('div');
+            mobileCard.className = 'cart-item-card-mobile';
+            mobileCard.innerHTML = `
+                <div class="d-flex gap-3 mb-3">
+                    <img src="${item.image}" class="rounded-3 shadow-xs" style="width: 80px; height: 80px; object-fit: cover;">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h6 class="fw-bold mb-1">${item.name}</h6>
+                            <button class="btn btn-link text-danger p-0 border-0" onclick="removeFromCart(${item.id})"><i class="bi bi-trash"></i></button>
+                        </div>
+                        <div class="text-muted small">₹${item.price} per item</div>
+                        <div class="mt-2 fw-bold text-primary">Subtotal: ₹${subtotal}</div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center bg-light rounded-pill p-1">
+                    <button class="btn btn-white shadow-sm qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+                    <input type="text" class="qty-input-mobile text-center" value="${item.quantity}" readonly>
+                    <button class="btn btn-white shadow-sm qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+                </div>
+            `;
+            mobileList.appendChild(mobileCard);
+        });
+
+        document.getElementById('summary-subtotal').innerText = `₹${total}`;
+        document.getElementById('summary-total').innerText = `₹${total}`;
+    }
+
+    function updateQuantity(id, change) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const item = cart.find(item => item.id === id);
+        if (item) {
+            item.quantity += change;
+            if (item.quantity <= 0) {
+                removeFromCart(id);
+                return;
+            }
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+            updateCartBadge();
+        }
+    }
+
+    function removeFromCart(id) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart = cart.filter(item => item.id !== id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+        updateCartBadge();
+    }
+
+    function proceedToCheckout() {
+        window.location.href = "{% url 'checkout' %}";
+    }
+
+    document.addEventListener('DOMContentLoaded', renderCart);
+</script>
+{% endblock %}

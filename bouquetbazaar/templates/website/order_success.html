@@ -1,0 +1,40 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Order Placed | Bouquet Bazaar{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container py-lg-5 text-center">
+        <div class="mx-auto bg-light rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 120px; height: 120px;">
+            <i class="bi bi-check-circle-fill display-1 text-success"></i>
+        </div>
+        <h1 class="display-5 fw-bold mb-3">Order Details Captured!</h1>
+        <p class="lead text-muted mb-5">Your order has been saved in our system. <br>Now, please click the button below to send your order details to us on WhatsApp to confirm and pay.</p>
+        
+        <div class="card border-0 shadow-sm rounded-4 p-4 mx-auto" style="max-width: 500px;">
+            <p class="mb-4 fw-bold">Step 2: Confirm on WhatsApp</p>
+            <a href="{{ wa_url }}" target="_blank" class="btn btn-success btn-lg px-5 py-3 rounded-pill shadow mb-4">
+                <i class="bi bi-whatsapp me-2"></i>Continue to WhatsApp
+            </a>
+            <p class="small text-muted">A pre-filled message with your order details is ready. Just hit "Send" once WhatsApp opens.</p>
+        </div>
+        
+        <div class="mt-5">
+            <a href="{% url 'index' %}" class="btn btn-link text-muted">Return to Homepage</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Clear the cart on successful order submission
+    document.addEventListener('DOMContentLoaded', () => {
+        localStorage.removeItem('cart');
+        updateCartBadge();
+        
+        // Optional: Auto-redirect after a short delay
+        // setTimeout(() => { window.open("{{ wa_url }}", "_blank"); }, 2000);
+    });
+</script>
+{% endblock %}

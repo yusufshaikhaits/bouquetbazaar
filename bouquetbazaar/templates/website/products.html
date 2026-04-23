@@ -1,0 +1,116 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Our Collection | Bouquet Bazaar{% endblock %}
+
+{% block content %}
+<section class="py-4 py-md-5 bg-light">
+    <div class="container py-lg-4">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item small"><a href="{% url 'index' %}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item small active" aria-current="page">Products</li>
+            </ol>
+        </nav>
+        
+        <div class="row align-items-center mb-4 g-3">
+            <div class="col-12 col-md-6 text-center text-md-start">
+                <h1 class="display-4 fw-bold mb-2">Our Collection</h1>
+                <p class="text-muted">Browse our handmade bouquets and thoughtful gifts.</p>
+            </div>
+            <div class="col-12 col-md-6 text-center text-md-end">
+                <div class="d-flex flex-wrap justify-content-center justify-content-md-end gap-2" role="group" aria-label="Category filter">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill active px-3" onclick="filterCategory('all')">All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="filterCategory('bouquet')">Bouquets</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="filterCategory('gift')">Gifts</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="filterCategory('letter')">Notes</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4" id="products-grid">
+            {% for product in products %}
+            <div class="col-12 col-md-6 col-lg-4 product-item" data-category="{{ product.category }}">
+                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden product-card">
+                    <div class="position-relative">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top img-aspect-ratio" alt="{{ product.name }}">
+                        {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center img-aspect-ratio">
+                            <i class="bi bi-image text-muted fs-1"></i>
+                        </div>
+                        {% endif %}
+                        <div class="badge bg-white text-dark position-absolute top-0 end-0 m-3 shadow-sm px-3 py-2">₹{{ product.price }}</div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="small text-uppercase tracking-wider text-muted mb-2" style="font-size: 0.7rem;">{{ product.get_category_display }}</div>
+                        <h5 class="card-title mb-2 fs-4">{{ product.name }}</h5>
+                        <p class="card-text text-muted small mb-4">{{ product.description }}</p>
+                        <div class="d-grid">
+                            <button onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }}, '{{ product.image.url|default:'' }}')" class="btn btn-primary py-3">
+                                <i class="bi bi-cart-plus me-2"></i>Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <div class="py-5">
+                    <i class="bi bi-search display-1 text-muted opacity-25"></i>
+                    <h3 class="mt-4">No products found</h3>
+                    <p class="text-muted">Check back later or contact us for custom orders.</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+    .product-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important; }
+    .tracking-wider { letter-spacing: 0.1em; }
+    .btn-outline-secondary.active { background-color: var(--primary-color); border-color: var(--primary-color); color: white; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterCategory(category) {
+        const items = document.querySelectorAll('.product-item');
+        const buttons = document.querySelectorAll('[onclick^="filterCategory"]');
+        
+        buttons.forEach(btn => {
+            if (btn.getAttribute('onclick').includes(`'${category}'`)) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        items.forEach(item => {
+            if (category === 'all' || item.getAttribute('data-category') === category) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    function addToCart(id, name, price, image) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const existingItem = cart.find(item => item.id === id);
+        
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            cart.push({ id, name, price, image, quantity: 1 });
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartBadge();
+        
+        showToast(`${name} added to cart!`);
+    }
+</script>
+{% endblock %}
