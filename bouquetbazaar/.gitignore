@@ -1,0 +1,16 @@
+# Django
+*.py [cod]
+__pycache__/
+*.so
+db.sqlite3
+media/
+staticfiles/
+static/
+.env
+.idea/
+.vscode/
+
+# Build folders
+build/
+dist/
+*.egg-info/
